@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
-import { getApis, getStats } from "./api";
+import {
+  getApis,
+  getStats,
+  checkApi,
+  deleteApi
+} from "./api";
 import AddApiForm from "./components/AddApiForm";
 
 function App() {
@@ -29,6 +34,41 @@ function App() {
     fetchDashboard();
   }, []);
 
+  const handleApiAdded = (newApi) => {
+    setApis((currentApis) => [newApi, ...currentApis]);
+
+    setStats((currentStats) => ({
+      ...currentStats,
+      total: currentStats.total + 1,
+      up:
+        newApi.status === "UP"
+          ? currentStats.up + 1
+          : currentStats.up,
+      down:
+        newApi.status === "DOWN"
+          ? currentStats.down + 1
+          : currentStats.down
+    }));
+  };
+
+  const handleCheck = async (id) => {
+    try {
+      await checkApi(id);
+      await fetchDashboard();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await deleteApi(id);
+      await fetchDashboard();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   if (loading) {
     return <div className="loading">Loading dashboard...</div>;
   }
@@ -36,21 +76,6 @@ function App() {
   if (error) {
     return <div className="error">{error}</div>;
   }
-  
-  const handleApiAdded = (newApi) => {
-  setApis((currentApis) => [newApi, ...currentApis]);
-
-  setStats((currentStats) => ({
-    ...currentStats,
-    total: currentStats.total + 1,
-    up: newApi.status === "UP"
-      ? currentStats.up + 1
-      : currentStats.up,
-    down: newApi.status === "DOWN"
-      ? currentStats.down + 1
-      : currentStats.down
-    }));
-  };
 
   return (
     <div className="dashboard">
@@ -89,7 +114,8 @@ function App() {
         </div>
       </section>
 
-    <AddApiForm onApiAdded={handleApiAdded} />
+      {/* Add API */}
+      <AddApiForm onApiAdded={handleApiAdded} />
 
       {/* API List */}
       <section className="api-section">
@@ -106,7 +132,9 @@ function App() {
 
                 <span
                   className={`status ${
-                    api.status === "UP" ? "status-up" : "status-down"
+                    api.status === "UP"
+                      ? "status-up"
+                      : "status-down"
                   }`}
                 >
                   {api.status}
@@ -130,6 +158,20 @@ function App() {
                   <span>Method</span>
                   <strong>{api.method}</strong>
                 </div>
+              </div>
+
+              {/* API Actions */}
+              <div className="api-actions">
+                <button onClick={() => handleCheck(api._id)}>
+                  Check Now
+                </button>
+
+                <button
+                  className="delete-button"
+                  onClick={() => handleDelete(api._id)}
+                >
+                  Delete
+                </button>
               </div>
             </div>
           ))}
