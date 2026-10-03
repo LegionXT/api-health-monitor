@@ -1,14 +1,18 @@
-import HealthHistory from "./components/HealthHistory";
 import { useEffect, useState } from "react";
+import { Routes, Route, Link } from "react-router-dom";
+
 import {
   getApis,
   getStats,
   checkApi,
   deleteApi
 } from "./api";
-import AddApiForm from "./components/AddApiForm";
 
-function App() {
+import AddApiForm from "./components/AddApiForm";
+import HealthHistory from "./components/HealthHistory";
+import ApiDetails from "./components/ApiDetails";
+
+function Dashboard() {
   const [apis, setApis] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -161,7 +165,6 @@ function App() {
                 </div>
               </div>
 
-              {/* API Actions */}
               <div className="api-actions">
                 <button onClick={() => handleCheck(api._id)}>
                   Check Now
@@ -173,15 +176,30 @@ function App() {
                 >
                   Delete
                 </button>
+
+                <Link
+                  to={`/api/${api._id}`}
+                  className="details-button"
+                >
+                  Details
+                </Link>
               </div>
 
               <HealthHistory apiId={api._id} />
-
             </div>
           ))}
         </div>
       </section>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Dashboard />} />
+      <Route path="/api/:id" element={<ApiDetails />} />
+    </Routes>
   );
 }
 
