@@ -1,52 +1,122 @@
 import { useEffect, useState } from "react";
-import { getApis } from "./api";
+import { getApis, getStats } from "./api";
 
 function App() {
   const [apis, setApis] = useState([]);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    const fetchApis = async () => {
-      try {
-        const response = await getApis();
-        setApis(response.data);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load APIs");
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchDashboard = async () => {
+    try {
+      const [apisResponse, statsResponse] = await Promise.all([
+        getApis(),
+        getStats()
+      ]);
 
-    fetchApis();
+      setApis(apisResponse.data);
+      setStats(statsResponse.data);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load dashboard");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboard();
   }, []);
 
   if (loading) {
-    return <h2>Loading APIs...</h2>;
+    return <div className="loading">Loading dashboard...</div>;
   }
 
   if (error) {
-    return <h2>{error}</h2>;
+    return <div className="error">{error}</div>;
   }
 
   return (
-    <div>
-      <h1>API Health Monitor</h1>
+    <div className="dashboard">
+      <header className="dashboard-header">
+        <div>
+          <h1>API Health Monitor</h1>
+          <p>Monitor your APIs in real time.</p>
+        </div>
+      </header>
 
-      {apis.length === 0 ? (
-        <p>No APIs are being monitored.</p>
-      ) : (
-        apis.map((api) => (
-          <div key={api._id}>
-            <h2>{api.name}</h2>
-            <p>{api.url}</p>
-            <p>Status: {api.status}</p>
-            <p>Response Time: {api.responseTime} ms</p>
-            <p>Uptime: {api.uptime}%</p>
-          </div>
-        ))
-      )}
+      {/* Statistics */}
+      <section className="stats-grid">
+        <div className="stat-card">
+          <span>Total APIs</span>
+          <strong>{stats.total}</strong>
+        </div>
+
+        <div className="stat-card">
+          <span>APIs UP</span>
+          <strong className="up-text">{stats.up}</strong>
+        </div>
+
+        <div className="stat-card">
+          <span>APIs DOWN</span>
+          <strong className="down-text">{stats.down}</strong>
+        </div>
+
+        <div className="stat-card">
+          <span>Avg Response</span>
+          <strong>{stats.averageResponseTime} ms</strong>
+        </div>
+
+        <div className="stat-card">
+          <span>Avg Uptime</span>
+          <strong>{stats.averageUptime}%</strong>
+        </div>
+      </section>
+
+      {/* API List */}
+      <section className="api-section">
+        <div className="section-header">
+          <h2>Monitored APIs</h2>
+          <span>{apis.length} APIs</span>
+        </div>
+
+        <div className="api-grid">
+          {apis.map((api) => (
+            <div className="api-card" key={api._id}>
+              <div className="api-card-header">
+                <h3>{api.name}</h3>
+
+                <span
+                  className={`status ${
+                    api.status === "UP" ? "status-up" : "status-down"
+                  }`}
+                >
+                  {api.status}
+                </span>
+              </div>
+
+              <p className="api-url">{api.url}</p>
+
+              <div className="api-details">
+                <div>
+                  <span>Response</span>
+                  <strong>{api.responseTime} ms</strong>
+                </div>
+
+                <div>
+                  <span>Uptime</span>
+                  <strong>{api.uptime}%</strong>
+                </div>
+
+                <div>
+                  <span>Method</span>
+                  <strong>{api.method}</strong>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
