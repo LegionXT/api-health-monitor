@@ -5,7 +5,10 @@ const { checkApi } = require("../services/monitorService");
 
 const router = express.Router();
 
+// ========================================
 // GET all APIs
+// ========================================
+
 router.get("/", async (req, res) => {
   try {
     const apis = await Api.find().sort({ createdAt: -1 });
@@ -19,7 +22,71 @@ router.get("/", async (req, res) => {
   }
 });
 
+
+// ========================================
+// GET dashboard statistics
+// ========================================
+
+router.get("/stats/summary", async (req, res) => {
+  try {
+    const apis = await Api.find();
+
+    const total = apis.length;
+
+    const up = apis.filter(
+      (api) => api.status === "UP"
+    ).length;
+
+    const down = apis.filter(
+      (api) => api.status === "DOWN"
+    ).length;
+
+    const responseTimes = apis
+      .filter((api) => api.responseTime !== null)
+      .map((api) => api.responseTime);
+
+    const averageResponseTime =
+      responseTimes.length === 0
+        ? 0
+        : Math.round(
+            responseTimes.reduce(
+              (sum, time) => sum + time,
+              0
+            ) / responseTimes.length
+          );
+
+    const averageUptime =
+      total === 0
+        ? 0
+        : Number(
+            (
+              apis.reduce(
+                (sum, api) => sum + api.uptime,
+                0
+              ) / total
+            ).toFixed(2)
+          );
+
+    res.json({
+      total,
+      up,
+      down,
+      averageResponseTime,
+      averageUptime
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to fetch dashboard statistics",
+      error: error.message
+    });
+  }
+});
+
+
+// ========================================
 // GET single API
+// ========================================
+
 router.get("/:id", async (req, res) => {
   try {
     const api = await Api.findById(req.params.id);
@@ -39,7 +106,11 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+
+// ========================================
 // GET health history
+// ========================================
+
 router.get("/:id/history", async (req, res) => {
   try {
     const history = await HealthCheck.find({
@@ -57,7 +128,11 @@ router.get("/:id/history", async (req, res) => {
   }
 });
 
+
+// ========================================
 // ADD API
+// ========================================
+
 router.post("/", async (req, res) => {
   try {
     const { name, url, method } = req.body;
@@ -87,7 +162,11 @@ router.post("/", async (req, res) => {
   }
 });
 
+
+// ========================================
 // MANUAL HEALTH CHECK
+// ========================================
+
 router.post("/:id/check", async (req, res) => {
   try {
     const api = await Api.findById(req.params.id);
@@ -114,7 +193,11 @@ router.post("/:id/check", async (req, res) => {
   }
 });
 
+
+// ========================================
 // DELETE API
+// ========================================
+
 router.delete("/:id", async (req, res) => {
   try {
     await Api.findByIdAndDelete(req.params.id);
@@ -133,5 +216,6 @@ router.delete("/:id", async (req, res) => {
     });
   }
 });
+
 
 module.exports = router;
