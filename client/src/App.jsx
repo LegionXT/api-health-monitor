@@ -1,3 +1,4 @@
+import HealthHistory from "./components/HealthHistory";
 import { useEffect, useState } from "react";
 import {
   getApis,
@@ -173,6 +174,9 @@ function App() {
                   Delete
                 </button>
               </div>
+
+              <HealthHistory apiId={api._id} />
+
             </div>
           ))}
         </div>
