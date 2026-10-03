@@ -57,19 +57,16 @@ mongoose
   .catch((error) => {
     console.error("MongoDB connection failed:", error.message);
   });
-
-
 // ==============================
-// Automatic Monitoring
+// Scheduled API Health Checks
 // ==============================
 
 // Run every 5 minutes
-cron.schedule("* * * * *", async () => {
+cron.schedule("*/5 * * * *", async () => {
   console.log("\nRunning scheduled API health checks...");
 
   try {
     await checkAllApis();
-
     console.log("Scheduled health checks completed.");
   } catch (error) {
     console.error(
