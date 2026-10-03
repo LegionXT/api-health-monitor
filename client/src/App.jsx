@@ -1,12 +1,7 @@
 import { useEffect, useState } from "react";
 import { Routes, Route, Link } from "react-router-dom";
 
-import {
-  getApis,
-  getStats,
-  checkApi,
-  deleteApi
-} from "./api";
+import { getApis, getStats, checkApi, deleteApi } from "./api";
 
 import AddApiForm from "./components/AddApiForm";
 import HealthHistory from "./components/HealthHistory";
@@ -17,12 +12,13 @@ function Dashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [checkingId, setCheckingId] = useState(null);
 
   const fetchDashboard = async () => {
     try {
       const [apisResponse, statsResponse] = await Promise.all([
         getApis(),
-        getStats()
+        getStats(),
       ]);
 
       setApis(apisResponse.data);
@@ -45,34 +41,41 @@ function Dashboard() {
     setStats((currentStats) => ({
       ...currentStats,
       total: currentStats.total + 1,
-      up:
-        newApi.status === "UP"
-          ? currentStats.up + 1
-          : currentStats.up,
+      up: newApi.status === "UP" ? currentStats.up + 1 : currentStats.up,
       down:
-        newApi.status === "DOWN"
-          ? currentStats.down + 1
-          : currentStats.down
+        newApi.status === "DOWN" ? currentStats.down + 1 : currentStats.down,
     }));
   };
 
   const handleCheck = async (id) => {
     try {
+      setCheckingId(id);
+
       await checkApi(id);
       await fetchDashboard();
     } catch (err) {
-      console.error(err);
+      console.error("Health check failed:", err);
+    } finally {
+      setCheckingId(null);
     }
   };
 
   const handleDelete = async (id) => {
-    try {
-      await deleteApi(id);
-      await fetchDashboard();
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  const confirmed = window.confirm(
+    "Are you sure you want to delete this API?"
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    await deleteApi(id);
+    await fetchDashboard();
+  } catch (err) {
+    console.error("Failed to delete API:", err);
+  }
+};
 
   if (loading) {
     return <div className="loading">Loading dashboard...</div>;
@@ -137,9 +140,7 @@ function Dashboard() {
 
                 <span
                   className={`status ${
-                    api.status === "UP"
-                      ? "status-up"
-                      : "status-down"
+                    api.status === "UP" ? "status-up" : "status-down"
                   }`}
                 >
                   {api.status}
@@ -166,8 +167,11 @@ function Dashboard() {
               </div>
 
               <div className="api-actions">
-                <button onClick={() => handleCheck(api._id)}>
-                  Check Now
+                <button
+                  onClick={() => handleCheck(api._id)}
+                  disabled={checkingId === api._id}
+                >
+                  {checkingId === api._id ? "Checking..." : "Check Now"}
                 </button>
 
                 <button
@@ -177,10 +181,7 @@ function Dashboard() {
                   Delete
                 </button>
 
-                <Link
-                  to={`/api/${api._id}`}
-                  className="details-button"
-                >
+                <Link to={`/api/${api._id}`} className="details-button">
                   Details
                 </Link>
               </div>
