@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getApis, getStats } from "./api";
+import AddApiForm from "./components/AddApiForm";
 
 function App() {
   const [apis, setApis] = useState([]);
@@ -35,6 +36,21 @@ function App() {
   if (error) {
     return <div className="error">{error}</div>;
   }
+  
+  const handleApiAdded = (newApi) => {
+  setApis((currentApis) => [newApi, ...currentApis]);
+
+  setStats((currentStats) => ({
+    ...currentStats,
+    total: currentStats.total + 1,
+    up: newApi.status === "UP"
+      ? currentStats.up + 1
+      : currentStats.up,
+    down: newApi.status === "DOWN"
+      ? currentStats.down + 1
+      : currentStats.down
+    }));
+  };
 
   return (
     <div className="dashboard">
@@ -72,6 +88,8 @@ function App() {
           <strong>{stats.averageUptime}%</strong>
         </div>
       </section>
+
+    <AddApiForm onApiAdded={handleApiAdded} />
 
       {/* API List */}
       <section className="api-section">
